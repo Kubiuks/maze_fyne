@@ -8,11 +8,8 @@ type Square struct {
 	Agent    bool
 	Visited  bool
 	Location Coordinates
-	Walls    [4]bool
+	Walls    [4]bool // left, top, right, down
 }
-
-// possible directions
-var directions = [4]bool{false, false, false, false} //{left, up, right, down}
 
 // Maze structure
 type Maze struct {
@@ -21,6 +18,8 @@ type Maze struct {
 	StartPoint    Coordinates
 	EndPoint      Coordinates
 	Solved        bool
+	DrawMaze      bool
+	drawScale     int
 }
 
 // Point on the maze
@@ -28,12 +27,12 @@ type Coordinates struct {
 	X, Y int
 }
 
-func CreateMaze(w, h int) Maze {
+func CreateMaze(w, h, scale int) Maze {
+
 	maze := Maze{Width: w, Height: h}
+	maze.drawScale = scale
 	maze.Grid = make([][]Square, h)
-	maze.StartPoint = Coordinates{0, 0}
-	maze.EndPoint = Coordinates{h - 1, w - 1}
-	maze.Solved = false
+
 	for i := 0; i < w; i++ {
 		maze.Grid[i] = make([]Square, w)
 		for j := 0; j < h; j++ {
@@ -41,10 +40,17 @@ func CreateMaze(w, h int) Maze {
 			maze.Grid[i][j].Walls = [4]bool{true, true, true, true}
 		}
 	}
+
+	maze.StartPoint = Coordinates{0, 0}
+	maze.EndPoint = Coordinates{h - 1, w - 1}
+	maze.Solved = false
+
 	maze.generate()
+	maze.DrawMaze = true
 	return maze
 }
 
+// generates a maze using recursive backtracking
 func (m *Maze) generate() {
 
 	stack := NewStack()
@@ -109,5 +115,24 @@ func (m *Maze) generate() {
 		}
 
 	}
+}
 
+// checks if move is within bounds
+func (m *Maze) inBounds(pos Coordinates, dx, dy int) bool {
+	if pos.X+dx >= m.Width || pos.X+dx < 0 || pos.Y+dy >= m.Height || pos.Y+dy < 0 {
+		return false
+	}
+	return true
+}
+
+// checks if there is a wall preventing the move
+func (m *Maze) wallHit(pos Coordinates, dx, dy int) bool {
+	square := m.Grid[pos.X][pos.Y]
+	if (square.Walls[0] && dx == -1) ||
+		(square.Walls[1] && dy == -1) ||
+		(square.Walls[2] && dx == 1) ||
+		(square.Walls[3] && dy == 1) {
+		return true
+	}
+	return false
 }
